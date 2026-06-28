@@ -64,7 +64,7 @@ This document describes the high-level design of a real-time streaming platform 
 
 ## 4. Architecture Overview
 
-> **See the draw.io diagram for the full visual:** [`rmn-architecture.drawio`](Design Document - https://drive.google.com/file/d/1MxDKi2qShK8xCw52mmDsRSPDVWZDCrKH/view?usp=drive_link
+> **See the draw.io diagram for the full visual:** [`rmn-architecture.drawio`](Design Document - https://drive.google.com/file/d/1MxDKi2qShK8xCw52mmDsRSPDVWZDCrKH/view?usp=sharing)
 
 The platform is organized into **six horizontal tiers**. Data flows top to bottom: client → ingestion → processing → storage → API → consumers, with observability as a cross-cutting layer.
 
@@ -157,7 +157,7 @@ Three independent Flink jobs consume from Kafka and write to storage sinks.
 
 ### 5.5 Insights API
 
-A PSpring Boot or Go service that routes queries to the appropriate storage tier based on the requested time window. See Section 7 for endpoint specifications.
+A Spring Boot or Go service that routes queries to the appropriate storage tier based on the requested time window. See Section 7 for endpoint specifications.
 
 ---
 
