@@ -1,0 +1,135 @@
+### Variables — set once, used by all requests below
+@BASE_URL = http://localhost:8080
+@TOKEN = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRfaWQiOiJ0ZW5hbnQtd2FsbWFydC0wMDEiLCJzdWIiOiJ0ZXN0LXVzZXIifQ.placeholder
+@CAMPAIGN = camp-spring-sale-2024
+
+
+### ── 1. CLICKS ─────────────────────────────────────────────────────────────
+
+### 1a. Live today-so-far (defaults to midnight UTC → now)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 1b. Specific time range — last 24 hours (warm tier: Druid)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-04-01T00:00:00Z&end=2024-04-02T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 1c. Historical range — last 7 days (cold tier: Snowflake)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-03-25T00:00:00Z&end=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 1d. With per-hour time series breakdown
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-04-01T00:00:00Z&end=2024-04-02T00:00:00Z&timeSeries=true
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 1e. Exactly at the 72-hour routing boundary (still routes to Druid)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-03-30T00:00:00Z&end=2024-04-01T00:00:00Z&timeSeries=true
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 2. IMPRESSIONS ──────────────────────────────────────────────────────────
+
+### 2a. Live today-so-far
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/impressions
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2b. Specific time range — last 24 hours (warm tier: Druid)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/impressions?start=2024-04-01T00:00:00Z&end=2024-04-02T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2c. Historical range — last 30 days (cold tier: Snowflake)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/impressions?start=2024-03-01T00:00:00Z&end=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2d. With per-hour time series breakdown
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/impressions?start=2024-04-01T00:00:00Z&end=2024-04-02T00:00:00Z&timeSeries=true
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 3. CLICK-TO-BASKET ──────────────────────────────────────────────────────
+
+### 3a. Live today-so-far
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clickToBasket
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 3b. Specific time range — last 24 hours (warm tier: Druid)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clickToBasket?start=2024-04-01T00:00:00Z&end=2024-04-02T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 3c. Historical range — last 90 days (cold tier: Snowflake)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clickToBasket?start=2024-01-01T00:00:00Z&end=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 4. ACTUATOR ─────────────────────────────────────────────────────────────
+
+### 4a. Health check
+GET {{BASE_URL}}/actuator/health
+
+###
+
+### 4b. Prometheus metrics scrape
+GET {{BASE_URL}}/actuator/prometheus
+
+
+### ── 5. SWAGGER / OPENAPI ───────────────────────────────────────────────────
+
+### 5a. Fetch raw OpenAPI JSON spec
+# Use this to import the spec into Postman, Insomnia, or any OpenAPI-compatible tool
+GET {{BASE_URL}}/v3/api-docs
+Accept: application/json
+
+###
+
+### 5b. Verify Swagger UI is reachable
+# Opens the HTML shell — paste the URL in a browser for the interactive UI
+# http://{{BASE_URL}}/swagger-ui.html
+GET {{BASE_URL}}/swagger-ui/index.html
+
+
+### ── 6. ERROR SCENARIOS ──────────────────────────────────────────────────────
+
+### 6a. Missing Authorization header → 401
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks
+
+###
+
+### 6b. Expired or tampered token → 401
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks
+Authorization: Bearer invalid.token.here
+
+###
+
+### 6c. start supplied without end → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 6d. end before start → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-04-02T00:00:00Z&end=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 6e. end equal to start → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN}}/clicks?start=2024-04-01T00:00:00Z&end=2024-04-01T00:00:00Z
+Authorization: Bearer {{TOKEN}}

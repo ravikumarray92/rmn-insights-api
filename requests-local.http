@@ -1,0 +1,138 @@
+### Local development requests — requires SPRING_PROFILES_ACTIVE=local
+### H2 seed data: tenant-walmart-001 / camp-spring-sale-2024 / camp-abc-123
+### Token is signed with JWT_SECRET=changeme and never expires (local use only)
+
+@BASE_URL  = http://localhost:8080
+@TOKEN     = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0ZW5hbnRfaWQiOiJ0ZW5hbnQtd2FsbWFydC0wMDEiLCJzdWIiOiJsb2NhbC1kZXYiLCJleHAiOjk5OTk5OTk5OTl9.CIz4iP1G8wWahVxyJxd144jReFnn--VHelFAt7c5Ecs
+@CAMPAIGN1 = camp-spring-sale-2024
+@CAMPAIGN2 = camp-abc-123
+
+
+### ── 1. HEALTH & ACTUATOR ───────────────────────────────────────────────────
+
+### 1a. Liveness check — no token required
+GET {{BASE_URL}}/actuator/health
+
+###
+
+### 1b. Prometheus metrics scrape
+GET {{BASE_URL}}/actuator/prometheus
+
+
+### ── 2. CLICKS ──────────────────────────────────────────────────────────────
+
+### 2a. Today so far — defaults to midnight UTC → now (hits H2 seed rows)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2b. Today so far — second seeded campaign
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN2}}/clicks
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2c. With per-hour time series breakdown
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?timeSeries=true
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2d. Explicit time range within today (realtime path — H2 returns data)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?start=2026-06-28T00:00:00Z&end=2026-06-28T23:59:59Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 2e. Historical range > 72h (historical path — H2 returns empty, routing verified)
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?start=2026-06-01T00:00:00Z&end=2026-06-20T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 3. IMPRESSIONS ─────────────────────────────────────────────────────────
+
+### 3a. Today so far
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/impressions
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 3b. Second campaign
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN2}}/impressions
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 3c. With time series
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/impressions?timeSeries=true
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 4. CLICK-TO-BASKET ─────────────────────────────────────────────────────
+
+### 4a. Today so far
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clickToBasket
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 4b. Second campaign
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN2}}/clickToBasket
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 4c. Explicit range
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clickToBasket?start=2026-06-28T00:00:00Z&end=2026-06-28T23:59:59Z
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 5. SWAGGER / OPENAPI ───────────────────────────────────────────────────
+
+### 5a. Raw OpenAPI spec
+GET {{BASE_URL}}/v3/api-docs
+Accept: application/json
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 5b. Swagger UI (open in browser)
+GET {{BASE_URL}}/swagger-ui/index.html
+Authorization: Bearer {{TOKEN}}
+
+
+### ── 6. ERROR SCENARIOS ──────────────────────────────────────────────────────
+
+### 6a. No token → 401
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks
+
+###
+
+### 6b. Invalid token → 401
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks
+Authorization: Bearer invalid.token.here
+
+###
+
+### 6c. Campaign not owned by tenant → 403
+GET {{BASE_URL}}/v1/ad/unknown-campaign-xyz/clicks
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 6d. start without end → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?start=2026-06-28T00:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 6e. end before start → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?start=2026-06-28T12:00:00Z&end=2026-06-28T06:00:00Z
+Authorization: Bearer {{TOKEN}}
+
+###
+
+### 6f. end equal to start → 400
+GET {{BASE_URL}}/v1/ad/{{CAMPAIGN1}}/clicks?start=2026-06-28T00:00:00Z&end=2026-06-28T00:00:00Z
+Authorization: Bearer {{TOKEN}}
