@@ -1,7 +1,7 @@
 # High-Level Design: Retail Media Network (RMN) Real-Time Streaming Platform
 
 **Version:** 1.0
-**Date:** 2026-06-27
+**Date:** 2026-06-28
 **Status:** COMPLETED
 
 > **Architecture Diagram:** [`rmn-architecture.drawio`](https://github.com/ravikumarray92/rmn-insights-api/blob/main/docs/Retail%20Media%20Network%20(RMN)%20%E2%80%94%20Real-Time%20Streaming%20Platform-Final.jpg)\
