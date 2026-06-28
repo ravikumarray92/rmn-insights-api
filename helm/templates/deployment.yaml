@@ -1,0 +1,61 @@
+# Deployment — manages the desired number of running pod replicas.
+# Kubernetes replaces pods automatically if they crash or fail health checks.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "rmn-insights-api.fullname" . }}
+  labels:
+    {{- include "rmn-insights-api.labels" . | nindent 4 }}
+spec:
+  # Omit replicas when HPA is enabled — HPA owns the replica count and
+  # a hardcoded value here would conflict with its scaling decisions.
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+
+  # Selector must match the pod template labels so the Deployment tracks its pods
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "rmn-insights-api.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "rmn-insights-api.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          # Image pulled from values.image.repository:values.image.tag
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          ports:
+            # Must match the port Spring Boot listens on (server.port in application.yml)
+            - containerPort: 8080
+              protocol: TCP
+
+          # Load all sensitive keys from the Secret as environment variables.
+          # The Secret name matches the one created in templates/secret.yaml.
+          envFrom:
+            - secretRef:
+                name: {{ include "rmn-insights-api.fullname" . }}-secrets
+
+          # Non-sensitive environment variables sourced directly from values.env
+          env:
+            {{- range $key, $val := .Values.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
+            {{- end }}
+
+          # Liveness probe — restarts the container if Spring Boot becomes unresponsive
+          livenessProbe:
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
+
+          # Readiness probe — withholds traffic until the application is fully started
+          readinessProbe:
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
+
+          # CPU and memory constraints sourced from values.resources
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

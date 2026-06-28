@@ -1,0 +1,38 @@
+# HorizontalPodAutoscaler — automatically scales the number of pod replicas
+# based on observed CPU and memory utilisation.
+# Only created when autoscaling.enabled is true in values.yaml.
+{{- if .Values.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "rmn-insights-api.fullname" . }}
+  labels:
+    {{- include "rmn-insights-api.labels" . | nindent 4 }}
+spec:
+  # Point the HPA at the Deployment it should scale
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "rmn-insights-api.fullname" . }}
+
+  # Hard floor and ceiling on replica count
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+
+  metrics:
+    # Scale up when average CPU utilisation across all pods exceeds the threshold
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+
+    # Scale up when average memory utilisation across all pods exceeds the threshold
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+{{- end }}

@@ -1,0 +1,16 @@
+# Helm chart metadata file — required in every chart.
+# Helm uses this to identify, version, and describe the chart.
+
+apiVersion: v2  # v2 is required for Helm 3; do not change
+
+name: rmn-insights-api  # Must match the chart directory name
+
+description: Retail Media Network Campaign Insights API
+
+type: application  # 'application' renders workloads; 'library' provides only helpers
+
+# Chart version — bump this whenever the chart templates or values change
+version: 0.1.0
+
+# Application version — tracks the Docker image / app release being deployed
+appVersion: "0.1.0-SNAPSHOT"

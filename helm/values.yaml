@@ -1,0 +1,72 @@
+# Default values for rmn-insights-api.
+# Override any value at install/upgrade time with --set key=value
+# or by supplying a custom values file with -f my-values.yaml.
+
+# Number of pod replicas to run when autoscaling is disabled.
+# When autoscaling.enabled is true this value is ignored — HPA controls replica count.
+# Keep in sync with autoscaling.minReplicas.
+replicaCount: 2
+
+image:
+  repository: rmn-insights-api  # Docker image name or full registry path
+  tag: latest                    # Image tag; pin to a specific version in production
+  pullPolicy: IfNotPresent       # Only pull if the image is not already present locally
+
+service:
+  type: ClusterIP  # ClusterIP = internal only; use LoadBalancer or NodePort to expose externally
+  port: 80         # Port the Service exposes to other pods
+  targetPort: 8080 # Port the Spring Boot application listens on inside the container
+
+# Non-sensitive environment variables injected directly into the pod.
+env:
+  REDIS_URL: redis://localhost:6379
+  DRUID_BROKER_URL: http://localhost:8082
+
+# Sensitive values stored in a Kubernetes Secret and mounted via envFrom.
+# Do NOT commit real values here — pass them at install time with:
+#   helm install rmn-insights-api ./helm \
+#     --set secrets.JWT_SECRET=<value> \
+#     --set secrets.SNOWFLAKE_PASSWORD=<value>
+# or supply a gitignored override file:  -f secrets.values.yaml
+secrets:
+  SNOWFLAKE_ACCOUNT: ""
+  SNOWFLAKE_USER: ""
+  SNOWFLAKE_PASSWORD: ""
+  JWT_SECRET: changeme
+
+# CPU and memory requests/limits for the application container.
+# Requests are used for scheduling; limits cap actual consumption.
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 500m
+    memory: 1Gi
+
+# Horizontal Pod Autoscaler — scales replicas automatically based on CPU/memory load.
+# Set enabled: true to activate; replicaCount in this file becomes the initial count.
+autoscaling:
+  enabled: false
+  minReplicas: 2    # Never scale below this number of pods
+  maxReplicas: 10    # Never scale above this number of pods
+  targetCPUUtilizationPercentage: 70     # Scale up when average CPU across pods exceeds 70%
+  targetMemoryUtilizationPercentage: 80  # Scale up when average memory across pods exceeds 80%
+
+# Liveness probe — Kubernetes restarts the pod if this fails.
+# /actuator/health returns 200 when Spring Boot context is up.
+livenessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 30  # Wait 30s before first check to allow JVM startup
+  periodSeconds: 10
+
+# Readiness probe — pod is removed from Service endpoints until this passes.
+# Lower initial delay than liveness so traffic is held back during warm-up.
+readinessProbe:
+  httpGet:
+    path: /actuator/health
+    port: 8080
+  initialDelaySeconds: 20
+  periodSeconds: 5

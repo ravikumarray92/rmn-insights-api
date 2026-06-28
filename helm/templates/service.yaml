@@ -1,0 +1,24 @@
+# Service — provides a stable network endpoint for the pods managed by the Deployment.
+# Pods come and go; the Service IP and DNS name remain constant.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rmn-insights-api.fullname" . }}
+  labels:
+    {{- include "rmn-insights-api.labels" . | nindent 4 }}
+spec:
+  # Service type controls external visibility:
+  #   ClusterIP   — internal only (default)
+  #   NodePort    — reachable on a static port on every node
+  #   LoadBalancer — provisions a cloud load balancer
+  type: {{ .Values.service.type }}
+
+  # Routes traffic only to pods whose labels match the Deployment's pod template
+  selector:
+    app.kubernetes.io/name: {{ include "rmn-insights-api.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+
+  ports:
+    - port: {{ .Values.service.port }}          # Port exposed to other services in the cluster
+      targetPort: {{ .Values.service.targetPort }} # Port on the container (matches Spring Boot server.port)
+      protocol: TCP
