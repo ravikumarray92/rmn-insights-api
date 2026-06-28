@@ -471,23 +471,31 @@ src/
 │   │   ├── config/
 │   │   │   ├── AppProperties.java               @ConfigurationProperties(prefix="rmn")
 │   │   │   ├── SecurityConfig.java              Spring Security — stateless JWT, CSRF disabled
-│   │   │   ├── RedisConfig.java                 StringRedisTemplate bean
-│   │   │   ├── DruidRestClientConfig.java       RestClient bean with JDK HttpClient timeout
-│   │   │   ├── SnowflakeDataSourceConfig.java   DataSource + NamedParameterJdbcTemplate
+│   │   │   ├── RedisConfig.java                 StringRedisTemplate bean (@Profile "!local")
+│   │   │   ├── DruidRestClientConfig.java       RestClient bean with JDK HttpClient timeout (@Profile "!local")
+│   │   │   ├── SnowflakeDataSourceConfig.java   DataSource + NamedParameterJdbcTemplate (@Profile "!local")
 │   │   │   └── OpenApiConfig.java               Swagger UI — API info + JWT Bearer security scheme
 │   │   ├── security/
-│   │   │   └── JwtAuthenticationFilter.java     OncePerRequestFilter — extracts tenant_id
+│   │   │   └── JwtAuthenticationFilter.java     OncePerRequestFilter — extracts tenant_id from JWT
 │   │   ├── controller/
 │   │   │   └── CampaignController.java          REST endpoints, @Observed tracing
 │   │   ├── service/
-│   │   │   └── CampaignService.java             Query routing + business logic
+│   │   │   └── CampaignService.java             Query routing, ownership check, business logic
 │   │   ├── repository/
-│   │   │   ├── RealtimeRepository.java          Redis HLL + Druid HTTP/JSON
-│   │   │   └── HistoricalRepository.java        Snowflake JDBC queries
+│   │   │   ├── ICampaignRepository.java         Ownership check interface
+│   │   │   ├── IHistoricalRepository.java       Historical query interface
+│   │   │   ├── IRealtimeRepository.java         Realtime query interface
+│   │   │   ├── CampaignRepository.java          Snowflake — campaign ownership check (@Profile "!local")
+│   │   │   ├── HistoricalRepository.java        Snowflake JDBC queries (@Profile "!local")
+│   │   │   ├── RealtimeRepository.java          Redis HLL + Druid HTTP/JSON (@Profile "!local")
+│   │   │   ├── H2CampaignRepository.java        H2 — campaign ownership check (@Profile "local")
+│   │   │   ├── H2HistoricalRepository.java      H2 JDBC historical queries (@Profile "local")
+│   │   │   └── H2RealtimeRepository.java        H2 JDBC realtime queries (@Profile "local")
 │   │   ├── dto/
 │   │   │   ├── TimeRange.java                   Domain record (validates end > start)
 │   │   │   ├── TimeRangeDto.java                Response-only serialisation record
 │   │   │   ├── MetricType.java                  Enum with SQL-safe columnName field
+│   │   │   ├── MetricPoint.java                 Time-series data point record
 │   │   │   ├── AggregationResult.java           Internal query result carrier
 │   │   │   ├── ClicksResponse.java
 │   │   │   ├── ImpressionsResponse.java
@@ -496,7 +504,11 @@ src/
 │   │   └── exception/
 │   │       └── GlobalExceptionHandler.java      @RestControllerAdvice
 │   └── resources/
-│       └── application.yml
+│       ├── application.yml                      Base configuration (all profiles)
+│       ├── application-local.yml                Local profile — H2 datasource, disables Redis autoconfigure
+│       ├── schema-h2.sql                        H2 DDL — campaigns + campaign_metrics_hourly tables
+│       ├── data-h2.sql                          H2 seed data for local development
+│       └── log4j2-spring.xml                    Log4j2 configuration (DEBUG in local, INFO elsewhere)
 └── test/
     └── java/rmn/insights/
         ├── controller/CampaignControllerTest.java   MockMvc + @WebMvcTest
