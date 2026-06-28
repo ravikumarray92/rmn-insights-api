@@ -6,7 +6,7 @@
 
 > **Architecture Diagram:** [`rmn-architecture.drawio`](./rmn-architecture.drawio)\
 > Open with [app.diagrams.net](https://app.diagrams.net)\
-> Design Document - https://drive.google.com/file/d/1MxDKi2qShK8xCw52mmDsRSPDVWZDCrKH/view?usp=drive_link
+> Design Document - https://drive.google.com/file/d/1MxDKi2qShK8xCw52mmDsRSPDVWZDCrKH/view?usp=sharing
 
 ---
 
