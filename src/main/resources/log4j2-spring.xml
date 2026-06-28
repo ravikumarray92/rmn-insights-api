@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_DIR">logs</Property>
+    </Properties>
+
+    <Appenders>
+
+        <!-- Console — used in all environments -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- Rolling file — one file per day, kept for 30 days -->
+        <RollingFile name="File"
+                     fileName="${LOG_DIR}/rmn-insights-api.log"
+                     filePattern="${LOG_DIR}/rmn-insights-api-%d{yyyy-MM-dd}.log.gz">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="100MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+
+    </Appenders>
+
+    <Loggers>
+
+        <!-- Application code — DEBUG in local, INFO elsewhere -->
+        <SpringProfile name="local">
+            <Logger name="rmn.insights" level="DEBUG" additivity="false">
+                <AppenderRef ref="Console"/>
+            </Logger>
+        </SpringProfile>
+
+        <SpringProfile name="!local">
+            <Logger name="rmn.insights" level="INFO" additivity="false">
+                <AppenderRef ref="Console"/>
+                <AppenderRef ref="File"/>
+            </Logger>
+        </SpringProfile>
+
+        <!-- Spring framework — keep at INFO to avoid noise -->
+        <Logger name="org.springframework" level="INFO" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <!-- Hibernate / JDBC — WARN in all profiles -->
+        <Logger name="org.hibernate" level="WARN" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
+        <Root level="WARN">
+            <AppenderRef ref="Console"/>
+        </Root>
+
+    </Loggers>
+
+</Configuration>

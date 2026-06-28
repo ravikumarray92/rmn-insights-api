@@ -1,0 +1,90 @@
+package rmn.insights.repository;
+
+import rmn.insights.dto.AggregationResult;
+import rmn.insights.dto.MetricPoint;
+import rmn.insights.dto.MetricType;
+import rmn.insights.dto.TimeRange;
+import lombok.extern.log4j.Log4j2;
+import org.springframework.context.annotation.Profile;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+@Log4j2
+@Profile("local")
+@Repository
+public class H2RealtimeRepository implements IRealtimeRepository {
+
+    private final NamedParameterJdbcTemplate jdbc;
+
+    public H2RealtimeRepository(NamedParameterJdbcTemplate jdbc) {
+        this.jdbc = jdbc;
+    }
+
+    @Override
+    public Long getCounter(String tenantId, String campaignId, MetricType metric) {
+        String sql = "SELECT COALESCE(SUM(" + metric.getColumnName() + "), 0) " +
+                     "FROM campaign_metrics_hourly " +
+                     "WHERE tenant_id = :tenantId AND campaign_id = :campaignId " +
+                     "AND metric_hour >= :start";
+        Map<String, Object> params = Map.of(
+                "tenantId", tenantId,
+                "campaignId", campaignId,
+                "start", Timestamp.from(Instant.now().truncatedTo(ChronoUnit.DAYS))
+        );
+        return jdbc.queryForObject(sql, params, Long.class);
+    }
+
+    @Override
+    public long getUniqueCount(String tenantId, String campaignId, String hllSuffix) {
+        String sql = "SELECT COALESCE(SUM(unique_users), 0) " +
+                     "FROM campaign_metrics_hourly " +
+                     "WHERE tenant_id = :tenantId AND campaign_id = :campaignId " +
+                     "AND metric_hour >= :start";
+        Map<String, Object> params = Map.of(
+                "tenantId", tenantId,
+                "campaignId", campaignId,
+                "start", Timestamp.from(Instant.now().truncatedTo(ChronoUnit.DAYS))
+        );
+        Long val = jdbc.queryForObject(sql, params, Long.class);
+        return val != null ? val : 0L;
+    }
+
+    @Override
+    public AggregationResult queryDruid(String tenantId, String campaignId,
+                                        MetricType metric, TimeRange range) {
+        String sql = "SELECT metric_hour, SUM(" + metric.getColumnName() + ") AS metric_value, " +
+                     "SUM(unique_users) AS unique_users " +
+                     "FROM campaign_metrics_hourly " +
+                     "WHERE tenant_id = :tenantId AND campaign_id = :campaignId " +
+                     "AND metric_hour >= :start AND metric_hour < :end " +
+                     "GROUP BY metric_hour ORDER BY metric_hour";
+        Map<String, Object> params = Map.of(
+                "tenantId", tenantId,
+                "campaignId", campaignId,
+                "start", Timestamp.from(range.start()),
+                "end", Timestamp.from(range.end())
+        );
+        log.debug("H2 realtime query metric={} interval={}/{} campaign={}", metric, range.start(), range.end(), campaignId);
+        List<MetricPoint> timeSeries = new ArrayList<>();
+        long total = 0;
+        long uniqueUsers = 0;
+        List<Map<String, Object>> rows = jdbc.queryForList(sql, params);
+        for (Map<String, Object> row : rows) {
+            Timestamp ts = (Timestamp) row.get("metric_hour");
+            long val = ((Number) row.get("metric_value")).longValue();
+            long uniq = ((Number) row.get("unique_users")).longValue();
+            total += val;
+            uniqueUsers = Math.max(uniqueUsers, uniq);
+            timeSeries.add(new MetricPoint(ts.toInstant(), val));
+        }
+        log.debug("H2 realtime result campaign={} rows={} total={}", campaignId, rows.size(), total);
+        return new AggregationResult(total, uniqueUsers, timeSeries);
+    }
+}

@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:rmndb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      schema-locations: classpath:schema-h2.sql
+      data-locations: classpath:data-h2.sql
+      mode: always
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisReactiveAutoConfiguration

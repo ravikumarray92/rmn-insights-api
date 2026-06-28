@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: rmn-insights-api
+  threads:
+    virtual:
+      enabled: true
+  data:
+    redis:
+      url: ${REDIS_URL:redis://localhost:6379}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+server:
+  port: 8080
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,metrics
+  tracing:
+    sampling:
+      probability: 1.0
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: alpha
+rmn:
+  druid:
+    broker-url: ${DRUID_BROKER_URL:http://localhost:8082}
+    query-timeout-ms: ${DRUID_QUERY_TIMEOUT_MS:5000}
+  snowflake:
+    account: ${SNOWFLAKE_ACCOUNT:}
+    user: ${SNOWFLAKE_USER:}
+    password: ${SNOWFLAKE_PASSWORD:}
+    warehouse: ${SNOWFLAKE_WAREHOUSE:INSIGHTS_WH}
+    database: ${SNOWFLAKE_DATABASE:RMN}
+    schema: ${SNOWFLAKE_SCHEMA:ANALYTICS}
+  realtime-window-hours: ${REALTIME_WINDOW_HOURS:72}
+  attribution-window-minutes: 30
+  jwt:
+    secret: ${JWT_SECRET:changeme}
