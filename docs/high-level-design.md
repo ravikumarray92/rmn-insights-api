@@ -4,7 +4,7 @@
 **Date:** 2026-06-27
 **Status:** COMPLETED
 
-> **Architecture Diagram:** [`rmn-architecture.drawio`](./rmn-architecture.drawio)\
+> **Architecture Diagram:** [`rmn-architecture.drawio`](https://github.com/ravikumarray92/rmn-insights-api/blob/main/docs/Retail%20Media%20Network%20(RMN)%20%E2%80%94%20Real-Time%20Streaming%20Platform-Final.jpg)\
 > Open with [app.diagrams.net](https://app.diagrams.net)\
 > Design Document - https://drive.google.com/file/d/1MxDKi2qShK8xCw52mmDsRSPDVWZDCrKH/view?usp=sharing
 
